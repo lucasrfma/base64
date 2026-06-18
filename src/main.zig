@@ -26,6 +26,62 @@ fn defineExecType(args: []const []const u8) ExecutionType {
     return ExecutionType.invalid;
 }
 
+fn encode(
+    io: std.Io,
+    writer: *std.Io.Writer,
+    fileName: []const u8,
+    allocator: Allocator
+) void {
+    // Get file reader
+    const cwd = std.Io.Dir.cwd();
+    const file = cwd.openFile(io, fileName, .{}) catch {
+        std.log.err("Could not open file =(", .{});
+        return;
+    };
+    defer file.close(io);
+    var file_reader = file.reader(io, &.{});
+    const reader = &file_reader.interface;
+
+    // multiple of 3, since we encode in triplets.
+    var read_buffer: [2100]u8 = undefined;
+
+    while (true) {
+        const len = reader.readSliceShort(&read_buffer) catch {
+            std.log.err("Could not read from file",.{});
+            return;
+        };
+        const output = base64.encode(read_buffer[0..len], allocator) catch {
+            std.log.err("Could not encode.",.{});
+            return;
+        };
+        writer.print("{s}",.{output}) catch {
+            std.log.err("Could not output the result.",.{});
+            return;
+        };
+        if (len < read_buffer.len or len == 0) break;
+    }
+}
+
+// fn decode(
+//     io: std.Io,
+//     writer: *std.Io.Writer,
+//     inputFileName: []const u8,
+//     outputFileName: []const u8,
+//     allocator: Allocator
+// ) void {
+//     // Get file reader
+//     const cwd = std.Io.Dir.cwd();
+//     const file = cwd.openFile(io, inputFileName, .{}) catch {
+//         std.log.err("Could not open file =(", .{});
+//         return;
+//     };
+//     defer file.close(io);
+//     var file_reader = file.reader(io, &.{});
+//     const reader = &file_reader.interface;
+
+
+// }
+
 pub fn main(init: std.process.Init) !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
@@ -49,47 +105,11 @@ pub fn main(init: std.process.Init) !void {
     }
     const execType = defineExecType(args);
 
-    var inputFile: []const u8 = undefined;
-    // var outputFile: []u8 = undefined;
-    switch (execType) {
-        .encode => {
-            inputFile = args[1];
-            // _ = outputFile;
-        },
-        else => {
-            return;
-            // _ = inputFile;
-            // _ = outputFile;
-        }
-    }
-
-    // Get file reader
-    const cwd = std.Io.Dir.cwd();
-    const file = cwd.openFile(io, inputFile, .{}) catch {
-        std.log.err("Could not open file =(", .{});
-        return;
-    };
-    defer file.close(io);
-    var file_reader = file.reader(io, &.{});
-    const reader = &file_reader.interface;
-
     const start = std.Io.Clock.awake.now(io);
-
-    // multiple of 3, since we encode in triplets.
-    var read_buffer: [2100]u8 = undefined;
-
-    std.log.info("Output Data: \n",.{});
-    while (true) {
-        const len = reader.readSliceShort(&read_buffer) catch {
-            std.log.err("Could not read from file =(",.{});
-            return;
-        };
-        const output = base64.encode(read_buffer[0..len], allocator) catch {
-            std.log.err("Could not encode =(",.{});
-            return;
-        };
-        try stdout_writer.print("{s}",.{output});
-        if (len < read_buffer.len or len == 0) break;
+    switch (execType) {
+        .encode => encode(io, stdout_writer, args[1], allocator),
+        // .decode => decode(io, stdout_writer, args[1], args[2], allocator),
+        else => return,
     }
 
     const elapsed = start.untilNow(io, .awake);
