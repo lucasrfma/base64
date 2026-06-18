@@ -4,10 +4,10 @@ Project done as a way of learning the zig language.
 
 #### Done
  - Encode functionality
-   - Encodes a file now (name is hardcoded) 
+   - Encodes a file: name is received as a single command line argument
  - Decode functionality
 
 #### To do
- - Add command line options
-   - A Encode option, accepts file name to indicate what file to decode.
+ - Add command line options 
    - A Decode option, accepts input and output file names.
+   - A help option (either '-h' or 'help' as single command line arguments)
