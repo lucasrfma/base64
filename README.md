@@ -10,5 +10,6 @@ Project done as a way of learning the zig language.
    - decode encodedfile decodedfile 
 
 #### To do
+ - Implement concurrency between reading and writing, and check performance results
  - Add command line options 
    - A help option (either '-h' or 'help' as single command line arguments)

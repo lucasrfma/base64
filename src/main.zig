@@ -42,18 +42,32 @@ pub fn main(init: std.process.Init) !void {
     const start = std.Io.Clock.awake.now(io);
 
     // get console args
-    const args = init.minimal.args.toSlice(allocator) catch {
-        std.log.err("Could not get console args =(",.{});
+    const args = init.minimal.args.toSlice(allocator) catch |err| {
+        std.log.err("Could not get console args.\nError: {}",.{err});
         return;
     };
     for (args) |arg| {
         std.log.info("arg: {s}", .{arg});
     }
-    const execType = defineExecType(args);
 
+    var read_buffer: []u8 = undefined;
+    var function: *const fn([]const u8, Allocator) Allocator.Error![]u8 = undefined;
+    var message: []const u8 = undefined;
+
+    const execType = defineExecType(args);
     switch (execType) {
-        .encode,
-        .decode => {},
+        .encode => {
+            function = base64.encode;
+            message = "Encode";
+            // multiple of 3 to match encoding blocks
+            read_buffer = try allocator.alloc(u8, 4095);
+        },
+        .decode => {
+            function = base64.decode;
+            message = "Decode";
+            // multiple of 4 to match decoding blocks
+            read_buffer = try allocator.alloc(u8, 4096);
+        },
         .help => {
             std.log.info("Print help.",.{});
             return;
@@ -65,63 +79,37 @@ pub fn main(init: std.process.Init) !void {
     }
     
     const cwd = std.Io.Dir.cwd();
-    const outputFile = cwd.createFile(io, args[3], .{}) catch {
-        std.log.err("Could not create output file", .{});
+
+    // open file and get reader
+    const file = cwd.openFile(io, args[2], .{}) catch |err| {
+        std.log.err("Could not open input file {s}\nError: {}", .{args[1], err});
         return;
-    };
-    defer outputFile.close(io);
-    var file_writer = outputFile.writer(io, &.{});
-    const writer = &file_writer.interface;
-    
-    // Get file reader
-    const file = cwd.openFile(io, args[2], .{}) catch |err| switch (err) {
-        error.FileNotFound => {
-            std.log.err("Could not find input file {s}", .{args[1]});
-            return;
-        },
-        error.AccessDenied => {
-            std.log.err("Access denied to input file {s}", .{args[1]});
-            return;
-        },
-        else => {
-            std.log.err("Could not open input file {s}", .{args[1]});
-            return;
-        }
     };
     defer file.close(io);
     var file_reader = file.reader(io, &.{});
     const reader = &file_reader.interface;
 
-    var read_buffer: []u8 = undefined;
-
-    var function: *const fn([]const u8, Allocator) Allocator.Error![]u8 = undefined;
-    var message: []const u8 = undefined;
-    switch (execType) {
-        .encode => {
-            function = base64.encode;
-            message = "Encode";
-            read_buffer = try allocator.alloc(u8, 4095);
-        },
-        .decode => {
-            function = base64.decode;
-            message = "Decode";
-            read_buffer = try allocator.alloc(u8, 4096);
-        },
-        else => unreachable
-    }
+    // create file and get writer
+    const outputFile = cwd.createFile(io, args[3], .{}) catch |err| {
+        std.log.err("Could not create output file {s}\nError: {}", .{args[3], err});
+        return;
+    };
+    defer outputFile.close(io);
+    var file_writer = outputFile.writer(io, &.{});
+    const writer = &file_writer.interface;
 
     while (true) {
-        const len = reader.readSliceShort(read_buffer) catch {
-            std.log.err("Could not read from file",.{});
+        const len = reader.readSliceShort(read_buffer) catch |err| {
+            std.log.err("Could not read from file\nError: {}",.{err});
             return;
         };
-        const output = function(read_buffer[0..len], allocator) catch {
-            std.log.err("Could not {s}.",.{message});
+        const output = function(read_buffer[0..len], allocator) catch |err| {
+            std.log.err("Could not {s}.\nError: {}",.{message, err});
             return;
         };
         std.log.info("{s}d:\n{s}",.{message, output});
-        _ = writer.write(output) catch {
-            std.log.err("Could not output the result.",.{});
+        _ = writer.write(output) catch |err| {
+            std.log.err("Could not output the result.\nError: {}",.{err});
             return;
         };
         if (len < read_buffer.len or len == 0) break;
