@@ -41,6 +41,8 @@ pub fn build(b: *std.Build) void {
         .target = target,
     });
 
+    const log_level = b.option(std.log.Level, "log-level", "The log level for the app") orelse .info;
+
     // Here we define an executable. An executable needs to have a root module
     // which needs to expose a `main` function. While we could add a main function
     // to the module defined above, it's sometimes preferable to split business
@@ -82,6 +84,11 @@ pub fn build(b: *std.Build) void {
             },
         }),
     });
+
+    const options = b.addOptions();
+    options.addOption(std.log.Level, "log_level", log_level);
+    exe.root_module.addOptions("build_options", options);
+
 
     // This declares intent for the executable to be installed into the
     // install prefix when running `zig build` (i.e. when executing the default

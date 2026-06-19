@@ -4,6 +4,12 @@ const Allocator = std.mem.Allocator;
 
 const base64 = @import("base64");
 
+const build_options = @import("build_options"); 
+
+pub const std_options: std.Options = .{
+    .log_level = @enumFromInt(@intFromEnum(build_options.log_level)),
+};
+
 const ExecutionType = enum {
     help,
     encode,
@@ -117,5 +123,5 @@ pub fn main(init: std.process.Init) !void {
 
     const elapsed = start.untilNow(io, .awake);
 
-    std.log.info("\nElapsed time: {}\n",.{elapsed});
+    std.log.warn("\nElapsed time: {}\n",.{elapsed});
 }
