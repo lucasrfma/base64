@@ -96,12 +96,12 @@ pub fn main(init: std.process.Init) !void {
     const reader = &file_reader.interface;
 
     // create file and get writer
-    const outputFile = cwd.createFile(io, args[3], .{}) catch |err| {
+    const output_file = cwd.createFile(io, args[3], .{}) catch |err| {
         std.log.err("Could not create output file {s}\nError: {}", .{args[3], err});
         return;
     };
-    defer outputFile.close(io);
-    var file_writer = outputFile.writer(io, &.{});
+    defer output_file.close(io);
+    var file_writer = output_file.writer(io, &.{});
     const writer = &file_writer.interface;
 
     while (true) {
