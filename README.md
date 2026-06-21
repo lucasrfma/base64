@@ -20,11 +20,11 @@ Implemented basic concurrency:
  - Saver: 
    - writes the result to file.
 
-Did a simple manual testing comparing this branch to main:
+Did a simple manual testing comparing this version to single threaded (ST) version:
  - compiling  with --release=fast and -Dlog-level=warn
  - Tested decoding a encoded pptx file (og file is 10616KB, encoded one is 14155KB)
  - ran this 5x for each version:
-   - Main version:
+   - ST version:
      - 4 runs with very similar time of around 76ms
      - 1 outlier with a runtime of 195 ms. Avg including outlier 99.74ms
    - Concurrent version:
