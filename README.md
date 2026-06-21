@@ -9,8 +9,35 @@ Project done as a way of learning the zig language.
    - encode sourcefile encodedfile
    - decode encodedfile decodedfile 
 
-#### To do
+#### In progress
  - Implement concurrency between reading and writing, and check performance results
+
+Implemented basic concurrency:
+ - Worker: 
+   - reads the original file
+   - applies the desired function (encode or decode)
+   - enqueues result
+ - Saver: 
+   - writes the result to file.
+
+Did a simple manual testing comparing this branch to main:
+ - compiling  with --release=fast and -Dlog-level=warn
+ - Tested decoding a encoded pptx file (og file is 10616KB, encoded one is 14155KB)
+ - ran this 5x for each version:
+   - Main version:
+     - 4 runs with very similar time of around 76ms
+     - 1 outlier with a runtime of 195 ms. Avg including outlier 99.74ms
+   - Concurrent version:
+     - 4 runs with very similar time of around 69ms
+       - A decrease of 8.94% in time, so around 10% increased speed
+     - 1 outlier with a runtime of 367ms, so a much bigger spike. Avg including outlier: 128.64ms.
+
+Conclusion: seems faster, but the bigger spike is a bummer. 
+Better testing required.
+Also, maybe trying to increase the number of workers.
+
+#### To do
+
  - Add command line options 
    - A help option (either '-h' or 'help' as single command line arguments)
 
