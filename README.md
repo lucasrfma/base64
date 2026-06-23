@@ -8,6 +8,9 @@ Project done as a way of learning the zig language.
  - Command line arguments:
    - encode sourcefile encodedfile
    - decode encodedfile decodedfile 
+   - help
+
+Help message is printed if 'help' or '-h' argument is used. If a wrong argument is used, a message telling the user it was an incorrect input is printed, along with the help message.
 
 #### In progress
  - Implement concurrency between reading and writing, and check performance results
@@ -35,12 +38,6 @@ Did a simple manual testing comparing this version to single threaded (ST) versi
 Conclusion: seems faster, but the bigger spike is a bummer. 
 Better testing required.
 Also, maybe trying to increase the number of workers.
-
-#### To do
-
- - Add command line options 
-   - A help option (either '-h' or 'help' as single command line arguments)
-
 
 #### Formatting
 

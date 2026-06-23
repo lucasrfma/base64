@@ -38,6 +38,35 @@ fn defineExecType(args: []const []const u8) ExecutionType {
     return ExecutionType.invalid;
 }
 
+fn printHelp(io: std.Io, warn_wrong_args: bool) void {
+    var stdout_writer = std.Io.File.stdout().writer(io, &.{});
+    const stdout = &stdout_writer.interface;
+
+    const wrong_args_msg = "\n  Invalid arguments received.\n";
+    const help_msg = 
+        \\ 
+        \\  Quick guide to using this base 64 encode/decode tool:
+        \\
+        \\    help(-h)  
+        \\      - shows this message again.
+        \\
+        \\    encode(-e) file_to_encode output_file_name
+        \\      - encodes a file.
+        \\
+        \\    decode(-d) file_to_decode output_file_name
+        \\      - decodes a file.
+        \\
+        \\
+    ;
+
+    const msg_to_write = if (warn_wrong_args) wrong_args_msg ++ help_msg else help_msg;
+
+    stdout.writeAll(msg_to_write) catch |err| {
+        std.log.err("Could not write help message to stdout.\n{}", .{err});
+        return;
+    };
+}
+
 pub fn main(init: std.process.Init) !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     defer arena.deinit();
@@ -75,11 +104,11 @@ pub fn main(init: std.process.Init) !void {
             read_buffer = try allocator.alloc(u8, 4096);
         },
         .help => {
-            std.log.info("Print help.",.{});
+            printHelp(io, false);
             return;
         },
         .invalid => {
-            std.log.info("Bad arguments, also print help.", .{});
+            printHelp(io, true);
             return;
         },
     }
@@ -178,7 +207,7 @@ fn saver(
                 return;
             },
         };
-        _ = writer.write(output) catch |err| {
+        writer.writeAll(output) catch |err| {
             std.log.err("Could not output the result.\n{}",.{err});
             return;
         };
